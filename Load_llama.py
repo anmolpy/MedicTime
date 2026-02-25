@@ -11,10 +11,8 @@ from elevenlabs.client import ElevenLabs
 from elevenlabs import VoiceSettings
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# ── 1. Connect to your ChromaDB ──────────────────────────────
 client = chromadb.PersistentClient(path="./medical_rag_store_v2")
 collections = client.list_collections()
 print("Collections found:", [c.name for c in collections])
@@ -22,10 +20,8 @@ print("Collections found:", [c.name for c in collections])
 collection = client.get_collection(collections[0].name)
 print(f"Documents loaded: {collection.count()}")
 
-# ── 2. Load embedding model ───────────────────────────────────
 embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# ── 3. Connect to HuggingFace Inference API ───────────────────
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 if not HF_TOKEN:
@@ -36,7 +32,6 @@ hf_client = InferenceClient(
     token=HF_TOKEN
 )
 
-# ── 4. Connect to ElevenLabs API ──────────────────────────────
 ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
 
 if not ELEVEN_API_KEY:
@@ -50,33 +45,28 @@ def speak(text: str):
     print(f"🔊 Speaking response...")
     
     audio_stream = eleven_client.text_to_speech.convert(
-        voice_id="21m00Tcm4TlvDq8ikWAM",  # "Rachel" — professional, calm voice
+        voice_id="21m00Tcm4TlvDq8ikWAM",
         text=text,
-        model_id="eleven_turbo_v2",        # fastest model, good for real-time
+        model_id="eleven_turbo_v2",
         voice_settings=VoiceSettings(
-            stability=0.5,          # 0-1, higher = more consistent tone
-            similarity_boost=0.75,  # 0-1, higher = closer to original voice
+            stability=0.5,
+            similarity_boost=0.75,
             style=0.0,
             use_speaker_boost=True
         )
     )
     
-    # Load and play audio
     audio_bytes = b"".join(audio_stream)
     pygame.mixer.music.load(io.BytesIO(audio_bytes), "mp3")
     pygame.mixer.music.play()
     
-    # Wait for playback to finish before recording again
     while pygame.mixer.music.get_busy():
         pygame.time.wait(100)
 
-# ── 4. Load Whisper model ─────────────────────────────────────
-# Options: "tiny", "base", "small" — "base" recommended
 print("Loading Whisper model...")
 whisper_model = whisper.load_model("base")
 print("✅ Whisper ready")
 
-# ── 5. RAG retrieval function ─────────────────────────────────
 def get_context(patient_message: str, n=3) -> str:
     query_vector = embedder.encode(patient_message).tolist()
     results = collection.query(
@@ -85,7 +75,6 @@ def get_context(patient_message: str, n=3) -> str:
     )
     return "\n\n".join(results['documents'][0])
 
-# ── 6. LLM response function ──────────────────────────────────
 def receptionist_response(patient_message: str) -> str:
     context = get_context(patient_message)
 
@@ -96,7 +85,7 @@ def receptionist_response(patient_message: str) -> str:
                 "content": f"""You are a professional medical receptionist voice agent 
 for a healthcare clinic. You help patients with appointments, scheduling, 
 billing, and clinic policies. Be empathetic, clear, and concise since 
-this is a voice call.
+this is a voice call. Your_name: "C"
 
 Use these similar past conversations as a reference:
 {context}"""
@@ -112,7 +101,6 @@ Use these similar past conversations as a reference:
 
     return response.choices[0].message.content.strip()
 
-# ── 7. Voice input functions ──────────────────────────────────
 def record_audio(duration=5, sample_rate=16000):
     print(f"🎙️  Listening... (speak for up to {duration} seconds)")
 
@@ -125,18 +113,15 @@ def record_audio(duration=5, sample_rate=16000):
     sd.wait()
     print("✅ Recording complete")
 
-    # Return audio array directly instead of saving to file
     return audio.flatten(), sample_rate
 
 def transcribe_audio(audio_data, sample_rate) -> str:
     print("📝 Transcribing...")
-    # Pass audio array directly to Whisper (no ffmpeg needed)
     result = whisper_model.transcribe(audio_data, fp16=False)
     text = result["text"].strip()
     print(f"🗣️  Patient said: {text}")
     return text
 
-# ── 8. Full pipeline ──────────────────────────────────────────
 def listen_and_respond(duration=5):
     audio_data, sample_rate = record_audio(duration=duration)
     patient_message = transcribe_audio(audio_data, sample_rate)
@@ -151,7 +136,6 @@ def listen_and_respond(duration=5):
     speak(response)
     return response
 
-# ── 9. Run the agent ──────────────────────────────────────────
 if __name__ == "__main__":
     print("\n🏥 Medical Receptionist Voice Agent Started")
     print("Press ENTER to speak, Ctrl+C to quit\n")

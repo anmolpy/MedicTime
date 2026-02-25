@@ -1,8 +1,3 @@
-"""
-MedicTime FastAPI Server
-Wraps load_llama.py and rag_system.py into a REST API
-"""
-
 import os
 import sys
 import logging
@@ -18,17 +13,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-# ── Logging setup ──────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 log = logging.getLogger("medictime")
-
-# ── Lazy imports from existing modules ────────────────────────
-# We import at module level so startup failures are visible immediately.
-# Both modules run their own load_dotenv() so env vars are populated.
 
 log.info("Loading load_llama module …")
 from Load_llama import (
@@ -43,10 +33,9 @@ from elevenlabs import VoiceSettings
 log.info("load_llama module loaded ✅")
 
 log.info("Loading rag_system module …")
-import rag_system  # We'll call a patched version of process_clinical_audio below
+import rag_system
 import whisper as _whisper
 
-# ── Decode audio using imageio-ffmpeg (no system ffmpeg needed) ──
 import imageio_ffmpeg as _iio_ffmpeg
 import subprocess as _subprocess
 import numpy as _np
@@ -69,7 +58,6 @@ def _decode_audio(file_path: str, sample_rate: int = 16000) -> _np.ndarray:
     return audio.astype(_np.float32) / 32768.0
 log.info("rag_system module loaded ✅")
 
-# ── Patch process_clinical_audio to return a dict ─────────────
 def process_clinical_audio_api(audio_path: str) -> dict:
     """
     Adapted version of rag_system.process_clinical_audio that returns a dict
@@ -82,7 +70,6 @@ def process_clinical_audio_api(audio_path: str) -> dict:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     log.info(f"[SOAP] Transcribing on {device.upper()} …")
 
-    # Decode audio to numpy array via imageio-ffmpeg, then transcribe
     audio_np = _decode_audio(audio_path)
     result = whisper_model.transcribe(audio_np, fp16=False)
 
@@ -135,11 +122,16 @@ PLAN:
     return {"transcription": full_transcript, "soap": soap_note}
 
 
-# ── FastAPI app ────────────────────────────────────────────────
 app = FastAPI(
     title="MedicTime API",
     description="Medical receptionist voice agent + clinical SOAP note generator",
     version="1.0.0",
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent),
+    name="static",
 )
 
 app.add_middleware(
@@ -151,7 +143,6 @@ app.add_middleware(
 )
 
 
-# ── Helper: save upload to temp file ──────────────────────────
 async def save_upload(upload: UploadFile, suffix: str = ".mp3") -> str:
     """Saves an UploadFile to a temporary file and returns its path."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
@@ -163,8 +154,6 @@ async def save_upload(upload: UploadFile, suffix: str = ".mp3") -> str:
         tmp.close()
     return tmp.name
 
-
-# ── Endpoints ─────────────────────────────────────────────────
 
 @app.get("/")
 async def serve_frontend():
@@ -238,7 +227,6 @@ async def voice_chat(audio: UploadFile = File(...)):
     tmp_path = await save_upload(audio, suffix=suffix)
     try:
         log.info(f"[/api/voice-chat] Transcribing {audio.filename} …")
-        # Decode audio to numpy array via imageio-ffmpeg, then transcribe
         audio_np = _decode_audio(tmp_path)
         result = whisper_model.transcribe(audio_np, fp16=False)
         transcription = result["text"].strip()
@@ -254,7 +242,6 @@ async def voice_chat(audio: UploadFile = File(...)):
         response_text = receptionist_response(transcription)
         log.info(f"[/api/voice-chat] Response: {response_text[:80]!r}")
 
-        # ElevenLabs TTS
         audio_stream = eleven_client.text_to_speech.convert(
             voice_id="21m00Tcm4TlvDq8ikWAM",
             text=response_text,
@@ -286,7 +273,6 @@ async def voice_chat(audio: UploadFile = File(...)):
         os.unlink(tmp_path)
 
 
-# ── Startup event ──────────────────────────────────────────────
 @app.on_event("startup")
 async def startup_event():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -306,6 +292,5 @@ async def startup_event():
     log.info("=" * 60)
 
 
-# ── Entry point ────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=False)

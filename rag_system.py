@@ -10,17 +10,15 @@ except ImportError:
     import openai
     whisper = None
 
-# Load environment variables from .env file
 load_dotenv()
 
-# ── HuggingFace Inference API Setup ──────────────────────────
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 if not HF_TOKEN:
     raise ValueError("HF_TOKEN not set. Please add it to your .env file.")
 
 hf_client = InferenceClient(
-    model="meta-llama/Meta-Llama-3-8B-Instruct",  # Virtual LLM via HuggingFace
+    model="meta-llama/Meta-Llama-3-8B-Instruct",
     token=HF_TOKEN
 )
 audio_path = r"Audio_Recording\Audio1.mp3"
@@ -34,27 +32,17 @@ def process_clinical_audio(audio_path, output_file="final_soap_note.txt"):
     if not os.path.exists(audio_path):
         raise FileNotFoundError(f"Could not find audio file at {audio_path}")
 
-    # Set device to GPU if you have one, otherwise CPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     print(f"Device: {device.upper()}...")
     
-    # ==========================================
-    # STEP 1: TRANSCRIBE AUDIO
-    # ==========================================
     print("Transcribing audio (this may take a moment)...")
-    # Use basic whisper instead of whisperx to avoid FFmpeg/torchcodec issues
     model = whisper.load_model("base", device=device)
     
-    # Load audio using librosa with 16kHz resampling
     audio_data = librosa.load(audio_path, sr=16000)[0]
     
-    # Convert to format whisper expects  
     result = model.transcribe(audio_data)
     
-    # ==========================================
-    # STEP 2: FORMAT TRANSCRIPTION
-    # ==========================================
     print("Formatting transcription...")
     transcript_lines = []
     for segment in result["segments"]:
@@ -65,9 +53,6 @@ def process_clinical_audio(audio_path, output_file="final_soap_note.txt"):
     full_transcript = "\n".join(transcript_lines)
     print("\nTranscription Complete!")
 
-    # ==========================================
-    # STEP 4: GENERATE SOAP NOTE
-    # ==========================================
     print("Generating Clinical SOAP Note via HuggingFace Inference API...")
     
     user_prompt = f"""
@@ -110,9 +95,6 @@ PLAN:
     
     soap_note = llm_response.choices[0].message.content.strip()
 
-    # ==========================================
-    # STEP 5: SAVE TO FILE
-    # ==========================================
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("--- RAW TRANSCRIPT ---\n")
         f.write(full_transcript + "\n\n")
@@ -122,9 +104,7 @@ PLAN:
     print(f"\nSuccess! Output saved to: {output_file}")
     print("\n" + soap_note)
 
-# --- RUN THE SCRIPT ---
 if __name__ == "__main__":
-    # 1. Put your audio file path here
     AUDIO_FILE = audio_path
     
     try:
