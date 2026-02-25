@@ -1,0 +1,28 @@
+name: medictime
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pip:
+      - fastapi
+      - uvicorn[standard]
+      - python-multipart
+      - python-dotenv
+      - openai-whisper
+      - chromadb
+      - sentence-transformers
+      - huggingface-hub
+      - elevenlabs
+      - librosa
+      - soundfile
+      - sounddevice
+      - pygame
+      - imageio-ffmpeg
+      - pydub
+      - numpy<2.0
