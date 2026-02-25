@@ -70,10 +70,29 @@ pip install -r requirements-core.txt
 # Check if installation was successful
 echo ""
 echo "🧪 Verifying installation..."
-if python -c "import torch; import whisper; import chromadb; import elevenlabs; print('✅ All core packages installed successfully!')" 2>/dev/null; then
+if python -c "import torch; import whisper; import chromadb; import kokoro_onnx; print('✅ All core packages installed successfully!')" 2>/dev/null; then
     echo "✅ Installation completed successfully!"
 else
     echo "⚠️  Some packages may have issues. Please check manually."
+fi
+
+# Download Kokoro model files
+echo ""
+echo "🎤 Downloading Kokoro TTS model files..."
+if [ ! -f "kokoro-v1.0.onnx" ]; then
+    echo "Downloading kokoro-v1.0.onnx..."
+    wget -q https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+    echo "✅ Downloaded kokoro-v1.0.onnx"
+else
+    echo "✅ kokoro-v1.0.onnx already exists"
+fi
+
+if [ ! -f "voices-v1.0.bin" ]; then
+    echo "Downloading voices-v1.0.bin..."
+    wget -q https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+    echo "✅ Downloaded voices-v1.0.bin"
+else
+    echo "✅ voices-v1.0.bin already exists"
 fi
 
 # Check for .env file
@@ -85,9 +104,8 @@ if [ ! -f ".env" ]; then
     cat > .env << 'EOF'
 # API Keys and Tokens
 HF_TOKEN=your_huggingface_token_here
-ELEVEN_API_KEY=your_elevenlabs_api_key_here
 EOF
-    echo "✅ Created .env template. Please add your API keys!"
+    echo "✅ Created .env template. Please add your HuggingFace API key!"
 else
     echo "✅ .env file found"
 fi

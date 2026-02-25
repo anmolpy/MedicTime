@@ -8,7 +8,7 @@ A virtual assistant that helps doctors take notes, track patient records, and ge
 - 🎙️ **Voice Chat**: RAG-powered medical receptionist assistant
 - 📝 **SOAP Note Generation**: Automatic clinical documentation from audio
 - 🏥 **Medical Database**: ChromaDB vector store with 24k+ medical conversations
-- 🤖 **AI Models**: Meta-Llama-3-8B via HuggingFace, Whisper for transcription
+- 🤖 **AI Models**: Meta-Llama-3-8B via HuggingFace, Whisper for transcription, Kokoro for TTS
 
 ---
 
@@ -104,12 +104,27 @@ pip install -r requirements-core.txt
 Create a `.env` file in the root directory:
 ```env
 HF_TOKEN=your_huggingface_token_here
-ELEVEN_API_KEY=your_elevenlabs_api_key_here
 ```
 
-**Get your tokens:**
+**Get your token:**
 - HuggingFace: https://huggingface.co/settings/tokens
-- ElevenLabs: https://elevenlabs.io/app/settings/api-keys
+
+---
+
+## 🎤 Download TTS Model Files
+
+Kokoro TTS requires model files to be downloaded:
+
+```bash
+cd MedicTime
+wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+```
+
+**Or manually download:**
+1. Download `kokoro-v1.0.onnx` from https://github.com/thewh1teagle/kokoro-onnx/releases
+2. Download `voices-v1.0.bin` from the same releases page
+3. Place both files in the MedicTime project root directory
 
 ---
 
@@ -190,7 +205,9 @@ MedicTime/
 - Download it separately from the provided link
 - Rebuild it from source medical conversation data
 
-🔒 **API Keys Required**: You need free accounts on HuggingFace and ElevenLabs
+🎤 **TTS Model Files Required**: You need to download Kokoro ONNX model files (see setup section above)
+
+🔒 **API Key Required**: You need a free HuggingFace account for the LLM
 
 ---
 
@@ -266,9 +283,21 @@ lsof -ti:8000 | xargs kill -9
 **Solutions:**
 1. Verify `.env` file exists in project root
 2. Check token format (no quotes, no spaces)
-3. Get new tokens if expired:
+3. Get new token if expired:
    - HuggingFace: https://huggingface.co/settings/tokens
-   - ElevenLabs: https://elevenlabs.io/app/settings/api-keys
+
+### Kokoro TTS Model Not Found
+
+**Problem:** `FileNotFoundError: Voices file not found`
+
+**Solutions:**
+1. Download model files to project root:
+   ```bash
+   wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+   wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+   ```
+2. Verify both files exist in project root directory
+3. Check file permissions
 
 ---
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import torch
 import uvicorn
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -26,15 +26,14 @@ from Load_llama import (
     whisper_model,
     embedder,
     collection,
-    eleven_client,
+    tts_generate,
     transcribe_audio,
 )
-from elevenlabs import VoiceSettings
 log.info("load_llama module loaded ✅")
 
 log.info("Loading rag_system module …")
-import rag_system
-import whisper as _whisper
+import unused.rag_system1 as rag_system1
+
 
 import imageio_ffmpeg as _iio_ffmpeg
 import subprocess as _subprocess
@@ -105,7 +104,7 @@ PLAN:
 """
 
     log.info("[SOAP] Calling HuggingFace for SOAP note …")
-    llm_response = rag_system.hf_client.chat_completion(
+    llm_response = rag_system1.hf_client.chat_completion(
         messages=[
             {
                 "role": "system",
@@ -220,7 +219,7 @@ async def voice_chat(audio: UploadFile = File(...)):
     Upload a voice recording.
     1. Transcribe with Whisper.
     2. Get RAG receptionist response.
-    3. Convert response to speech via ElevenLabs.
+    3. Convert response to speech via Kokoro TTS.
     Returns {"transcription": "...", "response": "...", "audio_b64": "..."}.
     """
     suffix = Path(audio.filename).suffix or ".webm"
@@ -242,18 +241,7 @@ async def voice_chat(audio: UploadFile = File(...)):
         response_text = receptionist_response(transcription)
         log.info(f"[/api/voice-chat] Response: {response_text[:80]!r}")
 
-        audio_stream = eleven_client.text_to_speech.convert(
-            voice_id="21m00Tcm4TlvDq8ikWAM",
-            text=response_text,
-            model_id="eleven_turbo_v2",
-            voice_settings=VoiceSettings(
-                stability=0.5,
-                similarity_boost=0.75,
-                style=0.0,
-                use_speaker_boost=True,
-            ),
-        )
-        audio_bytes = b"".join(audio_stream)
+        audio_bytes = tts_generate(response_text)
         audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
 
         return JSONResponse(
@@ -283,7 +271,7 @@ async def startup_event():
     log.info(f"   Embedder    : all-MiniLM-L6-v2 loaded ✅")
     log.info(f"   RAG docs    : {collection.count()} documents")
     log.info(f"   LLM         : meta-llama/Meta-Llama-3-8B-Instruct (HF API)")
-    log.info(f"   TTS         : ElevenLabs (Rachel voice)")
+    log.info(f"   TTS         : Kokoro ONNX (af_sarah voice)")
     log.info("   Endpoints   :")
     log.info("     POST /api/soap-from-audio")
     log.info("     POST /api/agent-chat")

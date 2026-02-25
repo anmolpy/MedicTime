@@ -14,6 +14,10 @@ medical_rag_store_v2/
 .env
 *.env
 
+# Kokoro TTS model files (large binary files - download separately)
+kokoro-v1.0.onnx
+voices-v1.0.bin
+
 # Python cache
 __pycache__/
 *.pyc

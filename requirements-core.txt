@@ -28,7 +28,7 @@ transformers>=4.35.0
 chromadb>=0.4.0
 
 # Text-to-Speech
-elevenlabs>=1.0.0
+kokoro-onnx>=1.0.0
 
 # Utilities
 numpy<2.0

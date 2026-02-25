@@ -67,11 +67,29 @@ pip install -r requirements-core.txt
 
 # Check if installation was successful
 Write-Host "`n🧪 Verifying installation..." -ForegroundColor Yellow
-python -c "import torch; import whisper; import chromadb; import elevenlabs; print('✅ All core packages installed successfully!')" 2>$null
+python -c "import torch; import whisper; import chromadb; import kokoro_onnx; print('✅ All core packages installed successfully!')" 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Installation completed successfully!" -ForegroundColor Green
 } else {
     Write-Host "⚠️  Some packages may have issues. Please check manually." -ForegroundColor Yellow
+}
+
+# Download Kokoro model files
+Write-Host "`n🎤 Downloading Kokoro TTS model files..." -ForegroundColor Yellow
+if (-not (Test-Path "kokoro-v1.0.onnx")) {
+    Write-Host "Downloading kokoro-v1.0.onnx..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx" -OutFile "kokoro-v1.0.onnx"
+    Write-Host "✅ Downloaded kokoro-v1.0.onnx" -ForegroundColor Green
+} else {
+    Write-Host "✅ kokoro-v1.0.onnx already exists" -ForegroundColor Green
+}
+
+if (-not (Test-Path "voices-v1.0.bin")) {
+    Write-Host "Downloading voices-v1.0.bin..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin" -OutFile "voices-v1.0.bin"
+    Write-Host "✅ Downloaded voices-v1.0.bin" -ForegroundColor Green
+} else {
+    Write-Host "✅ voices-v1.0.bin already exists" -ForegroundColor Green
 }
 
 # Check for .env file
@@ -82,9 +100,8 @@ if (-not (Test-Path ".env")) {
     @"
 # API Keys and Tokens
 HF_TOKEN=your_huggingface_token_here
-ELEVEN_API_KEY=your_elevenlabs_api_key_here
 "@ | Out-File -FilePath ".env" -Encoding utf8
-    Write-Host "✅ Created .env template. Please add your API keys!" -ForegroundColor Green
+    Write-Host "✅ Created .env template. Please add your HuggingFace API key!" -ForegroundColor Green
 } else {
     Write-Host "✅ .env file found" -ForegroundColor Green
 }

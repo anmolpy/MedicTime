@@ -2,14 +2,15 @@ import os
 import numpy as np
 import chromadb
 import whisper
+import io
 import sounddevice as sd
 from sentence_transformers import SentenceTransformer
 from huggingface_hub import InferenceClient
 import pygame
-import io
-from elevenlabs.client import ElevenLabs
-from elevenlabs import VoiceSettings
+from kokoro_onnx import Kokoro
+import soundfile as sf
 from dotenv import load_dotenv
+import tempfile 
 
 load_dotenv()
 
@@ -32,36 +33,29 @@ hf_client = InferenceClient(
     token=HF_TOKEN
 )
 
-ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
-
-if not ELEVEN_API_KEY:
-    raise ValueError("ELEVEN_API_KEY not set. Please add it to your .env file.")
-
-eleven_client = ElevenLabs(api_key=ELEVEN_API_KEY)
 pygame.mixer.init()
 
+kokoro = Kokoro("kokoro-v1.0.onnx", "voices-v1.0.bin")
+
 def speak(text: str):
-    """Converts text to speech and plays it through speakers"""
-    print(f"🔊 Speaking response...")
+    print("🔊 Speaking response...")
+    samples, sample_rate = kokoro.create(text, voice="af_sarah", speed=1.0)
     
-    audio_stream = eleven_client.text_to_speech.convert(
-        voice_id="21m00Tcm4TlvDq8ikWAM",
-        text=text,
-        model_id="eleven_turbo_v2",
-        voice_settings=VoiceSettings(
-            stability=0.5,
-            similarity_boost=0.75,
-            style=0.0,
-            use_speaker_boost=True
-        )
-    )
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        sf.write(tmp.name, samples, sample_rate)
+        tmp_path = tmp.name
     
-    audio_bytes = b"".join(audio_stream)
-    pygame.mixer.music.load(io.BytesIO(audio_bytes), "mp3")
+    pygame.mixer.music.load(tmp_path)
     pygame.mixer.music.play()
-    
     while pygame.mixer.music.get_busy():
         pygame.time.wait(100)
+    os.unlink(tmp_path)
+
+def tts_generate(text: str) -> bytes:
+    samples, sample_rate = kokoro.create(text, voice="af_sarah", speed=1.0)
+    buf = io.BytesIO()
+    sf.write(buf, samples, sample_rate, format="WAV")
+    return buf.getvalue()
 
 print("Loading Whisper model...")
 whisper_model = whisper.load_model("base")
