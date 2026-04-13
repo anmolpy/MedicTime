@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: medictime-api
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: WHISPER_MODEL
+        value: tiny
+      - key: HF_MODEL
+        value: meta-llama/Llama-3.2-1B-Instruct

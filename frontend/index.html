@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedicTime</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./config.js"></script>
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero">
+      <div class="eyebrow">Cloudflare Pages frontend + Render backend</div>
+      <h1>MedicTime</h1>
+      <p class="hero-copy">
+        A lighter deployment shape for clinical dictation, SOAP generation, and receptionist chat without bundling giant local model files into the frontend.
+      </p>
+      <div class="status-row">
+        <span class="status-badge" id="api-status">Checking API...</span>
+        <span class="status-note" id="api-base-label"></span>
+      </div>
+    </section>
+
+    <section class="panel-grid">
+      <article class="panel">
+        <h2>Receptionist Chat</h2>
+        <div class="chat-log" id="chat-log">
+          <div class="message agent">Hello. I can help with scheduling, billing questions, and general clinic guidance.</div>
+        </div>
+        <div class="input-row">
+          <input id="chat-input" type="text" placeholder="Ask a clinic question">
+          <button id="chat-send">Send</button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Voice Chat</h2>
+        <p class="panel-copy">Record a short message. The backend transcribes it, and the browser speaks the reply.</p>
+        <div class="control-row">
+          <buttton id="voice-record-btn">Start Recording</button>
+          <button id="voice-send-btn" disabled>Send Voice Message</button>
+        </div>
+        <p class="hint" id="voice-status">Microphone idle.</p>
+        <div class="result-block">
+          <h3>You said</h3>
+          <p id="voice-transcript">No transcript yet.</p>
+        </div>
+        <div class="result-block">
+          <h3>Assistant replied</h3>
+          <p id="voice-reply">No reply yet.</p>
+        </div>
+      </article>
+
+      <article class="panel panel-wide">
+        <h2>SOAP From Audio</h2>
+        <p class="panel-copy">Record a consultation in the browser or upload a file, then generate a SOAP note with doctor and patient roles inferred from the transcript.</p>
+        <div class="control-row">
+          <button id="soap-record-btn">Start Live Recording</button>
+          <button id="soap-use-recording-btn" disabled>Generate From Recording</button>
+          <input id="soap-file" type="file" accept="audio/*">
+          <button id="soap-submit-btn">Generate SOAP Note</button>
+        </div>
+        <p class="hint" id="soap-status">Select an audio file or start a live recording.</p>
+        <div class="soap-layout">
+          <div class="result-block">
+            <h3>Transcript</h3>
+            <pre id="soap-transcript">No transcript yet.</pre>
+          </div>
+          <div class="result-block">
+            <h3>SOAP Note</h3>
+            <pre id="soap-note">No SOAP note yet.</pre>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,9 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+python-dotenv>=1.0.1
+huggingface-hub>=0.28.0
+openai-whisper>=20231117
+torch>=2.2.0
+numpy<2.0
+imageio-ffmpeg>=0.5.1

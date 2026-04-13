@@ -1,0 +1,32 @@
+[
+  {
+    "topic": "Appointments",
+    "question": "How do I book or change an appointment?",
+    "answer": "Patients can request a new visit, reschedule, or cancel through the front desk. Same-day availability depends on the provider schedule.",
+    "keywords": ["appointment", "schedule", "reschedule", "cancel", "visit"]
+  },
+  {
+    "topic": "Billing",
+    "question": "What should I do if I have a billing question?",
+    "answer": "The front desk can review basic account details and route detailed billing issues to the billing team if needed.",
+    "keywords": ["billing", "invoice", "copay", "charge", "payment"]
+  },
+  {
+    "topic": "Prescriptions",
+    "question": "Can the front desk refill medication?",
+    "answer": "Medication refill requests must be reviewed by the clinical team. The receptionist can help route the request but cannot approve it.",
+    "keywords": ["refill", "prescription", "medication", "pharmacy"]
+  },
+  {
+    "topic": "Urgent symptoms",
+    "question": "What if symptoms sound urgent?",
+    "answer": "If the patient describes chest pain, trouble breathing, severe bleeding, stroke-like symptoms, or another emergency, advise them to call emergency services or seek urgent care immediately.",
+    "keywords": ["urgent", "emergency", "chest pain", "breathing", "stroke", "bleeding"]
+  },
+  {
+    "topic": "Records",
+    "question": "How can a patient request records?",
+    "answer": "Patients can request medical records through the clinic's records process. Identity verification and consent may be required.",
+    "keywords": ["records", "chart", "documents", "history", "medical records"]
+  }
+]
