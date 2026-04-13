@@ -16,6 +16,17 @@ function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
 }
 
+function requireApiBaseUrl() {
+  if (API_BASE_URL) {
+    return true;
+  }
+  const message = "Backend URL not configured. Add ?api=https://your-render-service.onrender.com to the page URL.";
+  appendChatMessage("agent", message);
+  document.getElementById("voice-status").textContent = message;
+  document.getElementById("soap-status").textContent = message;
+  return false;
+}
+
 function appendChatMessage(role, text) {
   const log = document.getElementById("chat-log");
   const el = document.createElement("div");
@@ -27,7 +38,12 @@ function appendChatMessage(role, text) {
 
 async function checkHealth() {
   const label = document.getElementById("api-status");
-  document.getElementById("api-base-label").textContent = API_BASE_URL || "Using same-origin API";
+  document.getElementById("api-base-label").textContent =
+    API_BASE_URL || "Add ?api=https://your-render-service.onrender.com";
+  if (!API_BASE_URL) {
+    label.textContent = "Backend URL needed";
+    return;
+  }
   try {
     const response = await fetch(apiUrl("/health"));
     if (!response.ok) {
@@ -40,6 +56,9 @@ async function checkHealth() {
 }
 
 async function sendChat() {
+  if (!requireApiBaseUrl()) {
+    return;
+  }
   const input = document.getElementById("chat-input");
   const message = input.value.trim();
   if (!message) {
@@ -136,6 +155,9 @@ async function submitVoiceMessage() {
   if (!state.voiceBlob || state.voiceBusy) {
     return;
   }
+  if (!requireApiBaseUrl()) {
+    return;
+  }
 
   const body = new FormData();
   body.append("audio", state.voiceBlob, "voice.webm");
@@ -163,6 +185,9 @@ async function submitVoiceMessage() {
 
 async function generateSoap() {
   if (state.soapBusy) {
+    return;
+  }
+  if (!requireApiBaseUrl()) {
     return;
   }
   const fileInput = document.getElementById("soap-file");
