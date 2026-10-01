@@ -34,11 +34,9 @@ Backend:
 
 ```bash
 pip install -r backend/requirements.txt
-uvicorn app.main:app --app-dir backend --reload
+APP_ENV=development uvicorn app.main:app --app-dir backend --reload
 ```
 
-Frontend:
+Open `http://localhost:8000` for the bundled frontend. For separate static hosting, set `DEPLOYED_API_ORIGIN` in `frontend/config.js` first.
 
-```bash
-python -m http.server 3000 --directory frontend
-```
+Read [SECURITY.md](SECURITY.md) for the required shared quota storage and deployment settings.
