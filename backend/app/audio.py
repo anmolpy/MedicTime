@@ -19,9 +19,11 @@ def decode_audio(file_path: str, sample_rate: int = 16000) -> np.ndarray:
         ffmpeg_exe,
         "-nostdin",
         "-threads",
-        "0",
+        "1",
         "-i",
         file_path,
+        "-t",
+        "90",
         "-f",
         "s16le",
         "-ac",
@@ -32,7 +34,7 @@ def decode_audio(file_path: str, sample_rate: int = 16000) -> np.ndarray:
         str(sample_rate),
         "-",
     ]
-    result = subprocess.run(cmd, capture_output=True, check=True)
+    result = subprocess.run(cmd, capture_output=True, check=True, timeout=30)
     audio = np.frombuffer(result.stdout, dtype=np.int16).flatten()
     return audio.astype(np.float32) / 32768.0
 

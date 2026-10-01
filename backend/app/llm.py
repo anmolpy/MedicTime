@@ -13,7 +13,7 @@ except ImportError:
 def _client() -> InferenceClient:
     if not settings.hf_token:
         raise RuntimeError("HF_TOKEN is missing. Set it in your Render environment.")
-    return InferenceClient(model=settings.hf_model, token=settings.hf_token)
+    return InferenceClient(model=settings.hf_model, token=settings.hf_token, timeout=60)
 
 
 def receptionist_response(message: str) -> str:

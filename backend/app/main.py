@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
-import traceback
+import uuid
+from starlette.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
+from .security import DemoGuard
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -33,6 +36,7 @@ app = FastAPI(
     version="2.0.0",
 )
 
+app.add_middleware(DemoGuard)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -40,6 +44,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def internal_error(operation, exc):
+    error_id = uuid.uuid4().hex
+    # Exception messages and tracebacks may contain patient text or credentials.
+    log.error("%s error_id=%s type=%s", operation, error_id, type(exc).__name__)
+    return JSONResponse(status_code=500, content={
+        "error": "Unable to process the request. Please try again.", "error_id": error_id})
+
+
+# Serve only the reviewed frontend files, never the project directory or .env.
+FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
+@app.get("/", include_in_schema=False)
+async def index():
+    return FileResponse(FRONTEND / "index.html")
+
 
 
 def _validate_audio_upload(upload: UploadFile) -> None:
@@ -68,8 +88,13 @@ async def save_upload(upload: UploadFile) -> str:
                 )
             tmp.write(chunk)
         tmp.flush()
+    except BaseException:
+        tmp.close()
+        os.unlink(tmp.name)
+        raise
     finally:
         tmp.close()
+        await upload.close()
     return tmp.name
 
 
@@ -85,16 +110,12 @@ async def health() -> dict:
 
 
 @app.post("/api/agent-chat")
-async def agent_chat(message: str = Form(...)):
+async def agent_chat(message: str = Form(..., min_length=1, max_length=4000)):
     try:
-        response = receptionist_response(message)
+        response = await run_in_threadpool(receptionist_response, message)
         return {"response": response}
     except Exception as exc:
-        log.exception("agent_chat failed")
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(exc), "details": traceback.format_exc()},
-        )
+        return internal_error("agent_chat failed", exc)
 
 
 @app.post("/api/voice-chat")
@@ -102,13 +123,13 @@ async def voice_chat(audio: UploadFile = File(...)):
     tmp_path = None
     try:
         tmp_path = await save_upload(audio)
-        transcription = transcribe_file(tmp_path)
+        transcription = await run_in_threadpool(transcribe_file, tmp_path)
         if not transcription:
             return JSONResponse(
                 status_code=400,
                 content={"error": "Could not transcribe audio. Please try again."},
             )
-        response = receptionist_response(transcription)
+        response = await run_in_threadpool(receptionist_response, transcription[:12000])
         return {
             "transcription": transcription,
             "response": response,
@@ -117,11 +138,7 @@ async def voice_chat(audio: UploadFile = File(...)):
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
     except Exception as exc:
-        log.exception("voice_chat failed")
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(exc), "details": traceback.format_exc()},
-        )
+        return internal_error("voice_chat failed", exc)
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
@@ -132,20 +149,23 @@ async def soap_from_audio(audio: UploadFile = File(...)):
     tmp_path = None
     try:
         tmp_path = await save_upload(audio)
-        transcript = transcribe_segments(tmp_path)
-        soap_note = generate_soap_note(transcript)
+        transcript = await run_in_threadpool(transcribe_segments, tmp_path)
+        soap_note = await run_in_threadpool(generate_soap_note, transcript[:12000])
         return {"transcription": transcript, "soap": soap_note}
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
     except Exception as exc:
-        log.exception("soap_from_audio failed")
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(exc), "details": traceback.format_exc()},
-        )
+        return internal_error("soap_from_audio failed", exc)
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+@app.get("/{asset}", include_in_schema=False)
+async def frontend_asset(asset: str):
+    if asset not in {"style.css", "script.js", "config.js"}:
+        raise HTTPException(status_code=404)
+    return FileResponse(FRONTEND / asset)
 
 
 if __name__ == "__main__":

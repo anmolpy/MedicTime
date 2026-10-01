@@ -20,7 +20,7 @@ function requireApiBaseUrl() {
   if (API_BASE_URL) {
     return true;
   }
-  const message = "Backend URL not configured. Add ?api=https://your-render-service.onrender.com to the page URL.";
+  const message = "Backend URL not configured. Ask the administrator to set the API origin in frontend/config.js.";
   appendChatMessage("agent", message);
   document.getElementById("voice-status").textContent = message;
   document.getElementById("soap-status").textContent = message;
@@ -39,7 +39,7 @@ function appendChatMessage(role, text) {
 async function checkHealth() {
   const label = document.getElementById("api-status");
   document.getElementById("api-base-label").textContent =
-    API_BASE_URL || "Add ?api=https://your-render-service.onrender.com";
+    API_BASE_URL || "Backend not configured";
   if (!API_BASE_URL) {
     label.textContent = "Backend URL needed";
     return;
